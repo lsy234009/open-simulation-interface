@@ -382,7 +382,7 @@ message Lane
             //
             TYPE_INTERSECTION = 4;
         }
-		
+
         // Definition of available lane subtypes.
         //        
         enum Subtype
@@ -390,7 +390,7 @@ message Lane
             // Lane of unknown subtype (must not be used in ground truth).
             //
             SUBTYPE_UNKNOWN = 0;
-			
+
             // Any other subtype of lane.
             //
             SUBTYPE_OTHER = 1;
