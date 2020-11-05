@@ -61,6 +61,7 @@ class GenerateProtobufCommand(build_py):
         'osi_trafficlight.proto',
         'osi_roadmarking.proto',
         'osi_featuredata.proto',
+        'osi_logicaldetectiondata.proto',
         'osi_object.proto',
         'osi_occupant.proto',
         'osi_lane.proto',
