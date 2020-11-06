@@ -2,19 +2,24 @@ syntax = "proto2";
 
 option optimize_for = SPEED;
 
+import "osi_version.proto";
 import "osi_common.proto";
+import "osi_object.proto";
 
 package osi3;
 
-//
-// \brief Interface for host vehicle data that is available to sensors and
-// other functions due to host vehicle's internal communication.
-// A usage regarding the vehicle model is also possible.
+// \brief Host vehicle data is about the perception of the vehicle about it's own, internal states.
+// It describes data that the host vehicle knows about itself,
+// e.g. from location sensors, internal sensors, board net etc.
+// A dynamic model can serve as input provider.
+// Sensors, mockups or other modules can make usage of the host vehicle data.
+// It consists of different messages categorizing the vehicle in:
+// Vehicle-Basics, Vehicle-Powermanagement, Vehicle-Powertrain, Vehicle-SteeringWheel, Vehicle-Wheels, Vehicle-Localization.
 //
 // \image html OSI_HostVehicle.svg
 //
-// All coordinates and orientations are relative to the global ground truth
-// coordinate system.
+// All coordinates and orientations are relative to the global ground truth coordinate system.
+// Otherwise it is mentioned explicitly.
 //
 message HostVehicleData
 {
@@ -32,48 +37,39 @@ message HostVehicleData
     // \note Note that dimension and base_polygon need not be set.
     //
     optional BaseMoving location_rmse = 2;
-    
-    // Contains all the perceivable information.
+
+    // The ID of the object. Can be discussed.
     //
-    optional MovingObject moving_object = 3;
-    
-    // Contains all the non-perceivable information.
+    // \rules
+    // is_globally_unique
+    // \endrules
     //
-    optional HostVehicleDataClass host_vehicle_data = 4;
-}
-    
-//
-// \brief The vehicle-class is a deeper description of a vehicle about the non-perceivable information.
-// It consists of different messages categorizing the vehicle in:
-// Vehicle-Basics, Vehicle-Powermanagement, Vehicle-Powertrain, Vehicle-SteeringWheel, Vehicle-Wheels, Vehicle-Localization.
-// As it is an description of the whole vehicle (focus on cars) it can be used as interface for various reasons. 
-//
-message HostVehicleDataClass
-{
+    optional Identifier id = 3;
+
     // The basic parameters of the vehicle.
     //
-    optional VehicleBasics vehicle_basics = 1;
-    
+    optional VehicleBasics vehicle_basics = 4;
+
     // Interface regarding the powermanagement.
     //
-    optional VehiclePowermanagement vehicle_powermanagement = 2;
-    
+    optional VehiclePowermanagement vehicle_powermanagement = 5;
+
     // Interface regarding the powertrain.
     //
-    optional VehiclePowertrain vehicle_powertrain = 3;
+    optional VehiclePowertrain vehicle_powertrain = 6;
 
     // Interface regarding the steering wheel.
     //
-    optional VehicleSteeringWheel vehicle_steering_wheel = 4;
+    optional VehicleSteeringWheel vehicle_steering_wheel = 7;
 
     // Interface regarding the wheels.
     //
-    optional VehicleWheels vehicle_wheels = 5;
+    optional VehicleWheels vehicle_wheels = 8;
 
     // Interface regarding the navigation.
     //
-    optional VehicleLocalization vehicle_localization = 6;
-    
+    optional VehiclePositionAndKinematics vehicle_position_and_kinematics = 9;
+
     //
     // \brief The absolute base parameters of the vehicle.
     //
@@ -81,20 +77,21 @@ message HostVehicleDataClass
     {
         // The total mass of the vehicle (curb weight). 
         //
-        // Unit: [kg]
+        // Unit: kg
         //
         // \par Reference:
-        // §42 der StVZO (german Straßenverkehrs-Zulassungs-Ordnung; engl. Road Traffic Regulations)
+        // Paragraph 42 of the German Road Traffic Admission Regulations (StVZO).
         //
         optional double curb_weight = 1;
     }
-    
+
     //
     // \brief State description of the powertrain.
     //
     message VehiclePowermanagement
     {
         // To be discussed.
+        //
     }
     
     //
@@ -106,22 +103,11 @@ message HostVehicleDataClass
         //
         optional Pedalry pedalry = 1;
 
-        // Rounds per minute of the engine.
-        //
-        // Unit: [1/min]
-        //
-        optional double engine_rpm = 2;
-
-        // Torque in Nm.
-        //
-        // Unit: [N*m]
-        //
-        optional double engine_torque = 3;
-
         // The actual gear of the gear lever.
+        // May come up later. For now just to be mentioned.
         //
-        optional GearLeverState gear_lever_state = 4;
-        
+        // optional GearLeverState gear_lever_state = 2;
+
         // The actual gear of the transmission.
         // E.g. gear_lever can be in "D" and transmission in "4", but not the
         // other way around.
@@ -132,62 +118,78 @@ message HostVehicleDataClass
         // - negative: reverse mode (generally -1, but few vehicles have several
         //   reverse mode gears)
         //
-        optional int32 gear_transmission = 5;
+        optional int32 gear_transmission = 3;
         
-        // Describe the possible mode of an automatic transmission.
+        // Information about the motor(s).
         //
-        enum AutomaticTransmissionMode
+        repeated Motor motor = 4;
+
+        //
+        // \brief A description for the positions of the pedals.
+        //
+        message Pedalry
         {
-            // The gear transmission mode is unknown (must not be
-            // used in ground truth).
+            // Position of the acceleration-pedal.
+            // Range: 0-1 (Unpressed - fully pressed)
             //
-            AUTOMATIC_TRANSMISSION_MODE_UNKNOWN = 0;
+            optional double pedal_position_acceleration = 1;
 
-            // Other (unspecified but known) transmisson mode.
+            // Position of the brake-pedal.
+            // Range: 0-1 (Unpressed - fully pressed)
             //
-            AUTOMATIC_TRANSMISSION_MODE_OTHER = 1;
-        
-            // The gear lever is in automatic parking mode.
-            //
-            AUTOMATIC_TRANSMISSION_MODE_PARK = 2;
+            optional double pedal_position_brake = 2;
 
-            // The gear lever is in reverse motion mode.
+            // Position of the clutch-pedal.
+            // Range: 0-1 (Unpressed - fully pressed)
             //
-            AUTOMATIC_TRANSMISSION_MODE_REVERSE = 3;
-
-            // The gear lever is in automatic neutral mode.
-            //
-            AUTOMATIC_TRANSMISSION_MODE_NEUTRAL = 4;
-
-            // The gear lever is in automatic driving mode.
-            //
-            AUTOMATIC_TRANSMISSION_MODE_DRIVE = 5;
-
-            // The gear lever is in a manual override mode.
-            //
-            AUTOMATIC_TRANSMISSION_MODE_MANUAL_OVERRIDE = 6;
+            optional double pedal_position_clutch = 3;
         }
         
         //
         // \brief A description for the positions of the pedals.
         //
-        //
-        message Pedalry
+        message Motor
         {
-            // Position of the acceleration-pedal.
-            // Unit: [0-1] (Unpressed - fully pressed)
+            // The type of the motor.
             //
-            optional double pedal_position_acceleration = 1;
+            optional Type type = 1;
+            
+            // Rounds per minute of the engine. RPM can be from E-Motor/ Engine.
+            //
+            // Unit: 1/min
+            //
+            optional double rpm = 2;
 
-            // Position of the brake-pedal.
-            // Unit: [0-1] (Unpressed - fully pressed)
+            // Torque in Nm. It can either be from Engine/E-Motor or combined Torque values.
             //
-            optional double pedal_position_brake = 2;
+            // Unit: N*m
+            //
+            optional double torque = 3;
+            
+            // Definition which type of motor is used.
+            //
+            enum Type
+            {
+                // The powertrain mode is unknown.
+                //
+                TYPE_UNKNOWN = 0;
 
-            // Position of the clutch-pedal.
-            // Unit: [0-1] (Unpressed - fully pressed)
-            //
-            optional double pedal_position_clutch = 3;
+                // It is another powertrain mode.
+                //
+                TYPE_OTHER = 1;
+
+                // A motor working after the principle of Nicolaus Otto.
+                //
+                TYPE_OTTO = 2;
+                
+                // A motor working after the principle of Rudolf Diesel.
+                //
+                TYPE_DIESEL = 3;
+                
+                // A motor working electric.
+                //
+                TYPE_ELECTRIC = 4;
+            }
         }
     }
 
@@ -200,25 +202,25 @@ message HostVehicleDataClass
         // Angle of the steering wheel. 
         // 0=Central (Straight); Left>0; 0>Right.
         //
-        // Unit: [rad]
+        // Unit: rad
         //
         optional double angle = 1;
 
         // Angle-speed of the steering wheel.
         // 0=Central (Straight); Left>0; 0>Right.
         //
-        // Unit: [rad/s]
+        // Unit: rad/s
         //
         optional double angular_speed = 2;
 
         // Torque of the steering wheel to the hand.
         // 0=Central (Straight); Left>0; 0>Right.
         //
-        // Unit: [N*m]
+        // Unit: N*m
         //
         optional double torque = 3;
     }
-    
+
     //
     // \brief The focus here is on the description of the wheels.
     //
@@ -233,126 +235,119 @@ message HostVehicleDataClass
         //
         message Wheel
         {
-            // Information about how the wheel is arranged.
+            // The axle which contains this wheel.  A value of 0 represents the
+            // front-most axle of the vehicle with higher numbers incrementing
+            // towards the rear-most axle.
             //
-            optional Arrangement arrangement = 1;
-            
+            optional uint32 axle = 1;
+
+            // The index of the wheel on the axle, counting in the direction
+            // of positive-y, i.e. right-to-left.
+            //
+            // For example, on a standard 2-axle, 4-wheel car, the rear-right
+            // wheel would be (axle=1, index=0).
+            //
+            optional uint32 index = 2;
+
             // Dry friction is a force that opposes the relative lateral motion of two solid surfaces 
             // in contact. It is subdivided into static friction between non-moving surfaces and kinetic
             // friction between moving surfaces.
             // Ued here is the dry friction coefficient of the paired materials (see reference).
             // Dimensionless.
             //
-            // Unit: []
+            // Unit: -
             //
             // \par References:
             // - http://adaptivemap.ma.psu.edu/websites/6_friction/dry_friction/dryfriction.html
             //
-            optional double kinetic_friction_coefficient = 2;
+            //optional double kinetic_friction_coefficient = 3;
 
             // Contact point of the mid of the tire tread with the world.
             // Absolute coordinates (x, y, z).
             //
-            // Unit: [m]
+            // Unit: m
             //
-            optional Vector3d contact_point = 3;
+            //optional Vector3d contact_point = 4;
 
-            // Contains the rotational speed of each wheel per second.
+            // Contains the rotation rate of the wheel per second in radians.
+            // Based on the processed output of the hall sensor at the wheel.
             //
-            // Unit: [rad/s]
+            // Unit: rad/s
             //
-            optional double rotational_speed = 4;
-            
-            // Contains the steering angle of each wheel.
-            // Right < 0; 0 = straight; 0 < left.
-            //
-            // Unit: [rad]
-            //
-            optional double steeringangle = 5;
-            
-            // Contains the relativ position of the center of the wheel to the center of the bounding-box.
-            // Possibility to get the spring deflection and the camber (https://en.wikipedia.org/wiki/Camber_angle).
-            //
-            // Unit: [m]
-            //
-            optional MountingPosition position = 6;
+            optional double rotation_rate = 5;
 
             // Contains the longitudinal slip of the tire.
             // \par References:
             // - https://www.kfz-tech.de/Biblio/Formelsammlung/Schlupf.htm
             //
-            // Unit: [%]
+            // Unit: %
             //
-            optional double slip = 8;
-            
-            // Information about how the wheel is arranged.
-            //
-            enum Arrangement
-            {
-                // The description is about a wheel that has an unknown arrangement.
-                //
-                ARRANGEMENT_UNKNOWN = 0;
-
-                // The description is about a wheel that has another arrangement (e.g. more than four wheels).
-                //
-                ARRANGEMENT_OTHER = 1;
-
-                // The description is about the front-left wheel.
-                //
-                ARRANGEMENT_FRONT_LEFT = 2;
-
-                // The description is about the front-right wheel.
-                //
-                ARRANGEMENT_FRONT_RIGHT = 3;
-
-                // The description is about the rear-left wheel.
-                //
-                ARRANGEMENT_REAR_LEFT = 4;
-
-                // The description is about the rear-right wheel.
-                //
-                ARRANGEMENT_REAR_RIGHT = 5;
-            }
+            optional double slip = 6;
         }
     }
 
     //
-    // \brief This message contains all the necessary information of the localization solution.
+    // \brief This message contains all the information the vehicle knows about its kinematic states.
     //
-    message VehicleLocalization
+    message VehiclePositionAndKinematics
     {
-        // Longitude in decimal degrees.
         //
-        // Unit: [degree]
+        // \brief Current kinematic data based on the output of the Intertial Measurement Unit (IMU).
         //
-        optional double longitude = 1;
+        message CartesianInformation
+        {
+            // Current kinematic data based on the output of the Intertial Measurement Unit (IMU).
+            //
+            // \note Note that dimension and base_polygon need not be set.
+            //
+            optional BaseMoving cartesian_data = 1;
 
-        // Latitude in decimal degrees.
-        //
-        // Unit: [degree]
-        //
-        optional double latitude = 2;
+            // Current kinematic data error based on the output of the Intertial Measurement Unit (IMU).
+            //
+            // \note Note that dimension and base_polygon need not be set.
+            //
+            optional BaseMoving cartesian_data_rmse = 2;
+        }
 
-        // Altitude in meters.
         //
-        // Unit: [m]
+        // \brief Current estimated location based on the output of the GPS-Unit.
         //
-        optional double altitude = 3;
+        message GeoreferencedInformation
+        {
+            // Longitude in decimal degrees regarding WGS84.
+            //
+            // Unit: Degree
+            //
+            optional double longitude = 1;
 
-        // Heading in degrees.
-        //
-        // Unit: [degree]
-        //
-        optional double heading = 4;
+            // Latitude in decimal degrees regarding WGS84.
+            //
+            // Unit: Degree
+            //
+            optional double latitude = 2;
 
-        // Accuracy of localization measurement measured in percentage of the units 
-        //
-        // Unit: [%]
-        //
-        optional double localization_accuracy = 5;
+            // Height above sea level regarding EGM96.
+            //
+            // Unit: m
+            //
+            optional double altitude = 3;
 
-        // Number of satellites 
-        //
-        optional int32 number_of_satellites = 6;    
+            // To be discussed as it is in CartesianInformation. 
+            // Heading in decimal degrees.
+            //
+            // Unit: Degree
+            //
+            // optional double heading = 4;
+
+            // Accuracy of localization measurement in percentage of the units.
+            //
+            // Unit: %
+            //
+            // optional double localization_accuracy = 5;
+
+            // Number of satellites.
+            //
+            // optional int32 number_of_satellites = 6;
+        }
     }    
 }
