@@ -686,6 +686,67 @@ message CameraSensorViewConfiguration
     //
     optional uint32 number_of_pixels_vertical = 7;
 
+    // Number of rays to cast across horizontal field of view.
+    //
+    // \note This is a characteristic of the ray tracing engine of the
+    // environment simulation, not a direct characteristic of the sensor.
+    //
+    // \rules
+    // is_greater_than_or_equal_to: 1
+    // \endrules
+    //
+    optional uint32 number_of_rays_horizontal = 8;
+
+    // Number of rays to cast across vertical field of view.
+    //
+    // \note This is a characteristic of the ray tracing engine of the
+    // environment simulation, not a direct characteristic of the sensor.
+    //
+    // \rules
+    // is_greater_than_or_equal_to: 1
+    // \endrules
+    //
+    optional uint32 number_of_rays_vertical = 9;
+
+    // Maximum number of interactions to take into account.
+    //
+    // \note This is a characteristic of the ray tracing engine of the
+    // environment simulation, not a direct characteristic of the sensor.
+    //
+    // \rules
+    // is_greater_than_or_equal_to: 1
+    // \endrules
+    //
+    optional uint32 max_number_of_interactions = 10;
+
+    // In use-cases where a spectral ray-tracer is used, this message determines the range of the wavelength
+    // and its desired number of samples.
+    //
+    optional WavelengthData wavelength_data = 11;
+
+    // \brief Detailed WavelengthRange message.
+    //
+    // Defines the start (minimum) and the end (maximum) values of the wavelength.
+    // Additionally, the number of samples within this range is defined in this message.
+    //
+    message WavelengthData
+    {
+        // The start, or the minimum, wavelength to be considered by the spectral ray tracer.
+        //
+        // Unit: nm
+        //
+        optional uint32 start = 1;
+
+        // The end, or the maximum, wavelength to be considered by the spectral ray tracer.
+        // Unit: nm
+        //
+        optional uint32 end = 2;
+
+        // Number of samples to be considered withing the defined wavelength range.
+        // 
+        optional uint32 samples_number = 3;
+    }
+
     // Format for image data (includes number, kind and format of channels).
     //
     // In the message provided by the sensor model, this field can
@@ -701,10 +762,10 @@ message CameraSensorViewConfiguration
     // cannot provide image data in one of the requested formats.
     //
     // \rules
-    // is_greater_than_or_equal_to: 1
+    // is_greater_than_or_equal_to: 1 
     // \endrules
     //
-    repeated ChannelFormat channel_format = 8;
+    repeated ChannelFormat channel_format = 12;
 
     // Channel format.
     //
